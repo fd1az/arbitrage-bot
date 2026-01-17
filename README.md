@@ -293,21 +293,21 @@ The codebase is designed to eventually support a separated architecture:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    DETECTION SERVER                          │
+│                    DETECTION SERVER                         |
 │  - Subscribes to blocks, fetches prices                     │
-│  - Calculates opportunities                                  │
+│  - Calculates opportunities                                 |
 │  - Exposes API (HTTP/WebSocket/gRPC)                        │
-│  - Prometheus metrics                                        │
+│  - Prometheus metrics                                       |
 └─────────────────────────────────────────────────────────────┘
                               │
                               │ API
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                       CLIENTS                                │
+│                       CLIENTS                               │
 │  - TUI (current)                                            │
-│  - Web dashboard                                             │
-│  - Mobile app                                                │
-│  - Alerts/notifications                                      │
+│  - Web dashboard                                            │
+│  - Mobile app                                               │
+│  - Alerts/notifications                                     │
 └─────────────────────────────────────────────────────────────┘
 ```
 
