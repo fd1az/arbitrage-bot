@@ -281,45 +281,39 @@ These are out of scope for this monitoring tool.
 
 ## Deployment
 
-### Option 1: Single Binary (Current)
+### Current: Single Binary
 
 ```bash
-./arbitrage  # Runs TUI + detection in one process
+./arbitrage  # Runs detection + TUI in one process
 ```
 
-### Option 2: Separate Services (Recommended for Production)
+### Future: Client-Server Architecture
 
-Split into two services for better scalability:
+The codebase is designed to eventually support a separated architecture:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    DETECTION SERVICE                         │
-│  - Subscribes to blocks                                      │
-│  - Fetches prices from CEX/DEX                              │
+│                    DETECTION SERVER                          │
+│  - Subscribes to blocks, fetches prices                     │
 │  - Calculates opportunities                                  │
-│  - Exposes HTTP API + WebSocket for real-time updates       │
-│  - Prometheus metrics on :9090                              │
+│  - Exposes API (HTTP/WebSocket/gRPC)                        │
+│  - Prometheus metrics                                        │
 └─────────────────────────────────────────────────────────────┘
                               │
-                              │ HTTP/WebSocket
+                              │ API
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    UI SERVICE                                │
-│  - Bubble Tea TUI (local terminal)                          │
-│  - OR: Web dashboard (React/Next.js)                        │
-│  - Connects to detection service API                        │
+│                       CLIENTS                                │
+│  - TUI (current)                                            │
+│  - Web dashboard                                             │
+│  - Mobile app                                                │
+│  - Alerts/notifications                                      │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-**Benefits:**
-- Detection service runs headless in cloud/k8s
-- Multiple UI clients can connect
-- Better separation of concerns
-- Independent scaling
+This separation is not yet implemented but the domain layer is decoupled to support it.
 
-### Docker Compose (Observability Stack)
-
-The included `docker-compose.yml` provides the full observability stack:
+### Observability Stack (Docker Compose)
 
 ```bash
 # Start observability stack
@@ -329,46 +323,9 @@ docker-compose up -d
 # - Zipkin:     http://localhost:9411  (tracing UI)
 # - Prometheus: http://localhost:9091  (metrics)
 # - Grafana:    http://localhost:3000  (dashboards, admin/admin)
-```
 
-Then run the bot locally:
-```bash
+# Run the bot
 ./arbitrage  # Exports metrics to :9090, traces to Zipkin
-```
-
-### Kubernetes
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: arbitrage-detector
-spec:
-  replicas: 1  # Single instance (stateful connections)
-  template:
-    spec:
-      containers:
-        - name: detector
-          image: arbitrage-bot:latest
-          args: ["--cli", "--api"]
-          ports:
-            - containerPort: 8080  # API
-            - containerPort: 9090  # Metrics
-          resources:
-            requests:
-              memory: "128Mi"
-              cpu: "100m"
-            limits:
-              memory: "256Mi"
-              cpu: "500m"
-          livenessProbe:
-            httpGet:
-              path: /live
-              port: 8081
-          readinessProbe:
-            httpGet:
-              path: /ready
-              port: 8081
 ```
 
 ## License
