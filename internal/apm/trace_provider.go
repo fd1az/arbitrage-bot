@@ -25,6 +25,7 @@ const (
 	NewRelicProvider  Provider = "NEWRELIC_PROVIDER"
 	ZipkinProvider    Provider = "ZIPKIN_PROVIDER"
 	HoneycombProvider Provider = "HONEYCOMB_PROVIDER"
+	JaegerProvider    Provider = "JAEGER_PROVIDER"
 	ConsoleProvider   Provider = "CONSOLE_PROVIDER"
 	EmptyProvider     Provider = "EMPTY_PROVIDER"
 )

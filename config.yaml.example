@@ -1,0 +1,53 @@
+# Arbitrage Bot Configuration
+# Copy this file to config.yaml and fill in the required values
+
+app:
+  name: arbitrage-bot
+  environment: development  # development, staging, production
+  log_level: info           # debug, info, warn, error
+
+# Ethereum Node Configuration
+# Required: You need access to an Ethereum node (Infura, Alchemy, etc.)
+ethereum:
+  websocket_url: "wss://eth-mainnet.g.alchemy.com/v2/YOUR_API_KEY"
+  http_url: "https://eth-mainnet.g.alchemy.com/v2/YOUR_API_KEY"
+  chain_id: 1
+  max_reconnects: 0         # 0 = infinite
+  initial_backoff: 1s
+  max_backoff: 30s
+
+# Binance WebSocket Configuration
+binance:
+  websocket_url: "wss://stream.binance.com:9443"
+  symbols:
+    - ETHUSDC
+    - BTCUSDC
+  depth_speed_ms: 100       # 100ms or 1000ms
+  stale_timeout: 5s
+
+# Uniswap V3 Contract Addresses (Ethereum Mainnet)
+# These are the official deployed addresses - change for other networks
+uniswap:
+  quoter_address: "0x61fFE014bA17989E743c5F6cB21bF9697530B21e"   # QuoterV2
+  router_address: "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45"   # SwapRouter02
+  factory_address: "0x1F98431c8aD98523631AE4a59f267346ea31F984"  # UniswapV3Factory
+  default_fee_tier: 3000    # 0.3% - common for major pairs
+
+# Arbitrage Detection Settings
+arbitrage:
+  pairs:                    # Trading pairs to monitor (BASE-QUOTE format)
+    - ETH-USDC
+  trade_sizes:              # ETH amounts to check
+    - 0.1
+    - 0.5
+    - 1.0
+  min_profit_bps: 10        # Minimum profit in basis points (10 = 0.1%)
+  min_profit_usd: 5         # Minimum profit in USD
+
+# Telemetry (OpenTelemetry)
+telemetry:
+  enabled: false
+  service_name: arbitrage-bot
+  otlp_endpoint: ""         # e.g., "https://api.honeycomb.io"
+  otlp_headers: ""          # e.g., "x-honeycomb-team=YOUR_KEY"
+  prometheus_port: 9090

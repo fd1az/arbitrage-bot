@@ -1,0 +1,44 @@
+# Mockery configuration for arbitrage-bot
+# Run with: make mocks
+# Docs: https://vektra.github.io/mockery/
+
+all: true
+quiet: false
+outpkg: "{{.PackageName}}"
+disable-version-string: true
+with-expecter: true
+filename: "{{.InterfaceName | snakecase}}.go"
+mockname: "Mock{{.InterfaceName}}"
+dir: "mocks/{{.PackagePath | base}}"
+packages:
+  # Pricing domain ports
+  github.com/fd1az/arbitrage-bot/business/pricing/app:
+    config:
+      recursive: false
+    interfaces:
+      CEXProvider:
+      DEXProvider:
+      PricingServicePort:
+
+  # Blockchain domain ports
+  github.com/fd1az/arbitrage-bot/business/blockchain/app:
+    config:
+      recursive: false
+    interfaces:
+      BlockSubscriber:
+      GasOracle:
+      BlockchainServicePort:
+
+  # Arbitrage domain ports
+  github.com/fd1az/arbitrage-bot/business/arbitrage/app:
+    config:
+      recursive: false
+    interfaces:
+      SpreadCalculator:
+      OpportunityReporter:
+      DetectorPort:
+
+  # Internal infrastructure
+  github.com/fd1az/arbitrage-bot/internal/wsconn:
+    config:
+      recursive: false

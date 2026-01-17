@@ -2,11 +2,12 @@
 
 ethereum:
   # WebSocket URL for real-time block subscription
-  # Use environment variable: ${INFURA_API_KEY} or ${ALCHEMY_API_KEY}
-  websocket_url: "wss://mainnet.infura.io/ws/v3/${INFURA_API_KEY}"
+  # Override via env var: ETH_WS_URL or ARB_ETH_WS_URL
+  websocket_url: ""
 
   # HTTP URL for fallback and eth_call requests
-  http_url: "https://mainnet.infura.io/v3/${INFURA_API_KEY}"
+  # Override via env var: ETH_HTTP_URL or ARB_ETH_HTTP_URL
+  http_url: ""
 
   # Maximum reconnection attempts (0 = infinite)
   max_reconnects: 0
@@ -18,30 +19,42 @@ ethereum:
   max_backoff: "30s"
 
 binance:
-  # Binance API base URL
-  base_url: "https://api.binance.com"
+  # WebSocket URL - use binance.us for US users
+  # Options:
+  #   wss://stream.binance.com:9443  (Global - blocked in US)
+  #   wss://stream.binance.us:9443   (US users)
+  #   wss://data-stream.binance.vision (Market data - limited streams)
+  websocket_url: "wss://stream.binance.com:9443"
 
   # Rate limit (requests per minute)
   http_rate_limit: 1200
 
+app:
+  log_level: "debug"
+
 arbitrage:
-  # Trading pairs to monitor
+  # Trading pairs to monitor (format: "BASE-QUOTE")
   pairs:
-    - base: "ETH"
-      quote: "USDC"
+    - "ETH-USDC"
 
   # Trade sizes to analyze (in base currency)
   trade_sizes: [1, 10, 100]
 
   # Minimum spread in basis points to consider
-  min_profit_bps: 10
+  min_profit_bps: -100
 
   # Minimum profit in USD to report
-  min_profit_usd: 10
+  min_profit_usd: -1000 #just for testing
 
 telemetry:
   # Enable/disable metrics and tracing
   enabled: true
+
+  # Service name for traces
+  service_name: "arbitrage-bot"
+
+  # Zipkin endpoint for traces (must be /api/v2/spans)
+  otlp_endpoint: "http://localhost:9411/api/v2/spans"
 
   # Prometheus metrics port
   prometheus_port: 9090

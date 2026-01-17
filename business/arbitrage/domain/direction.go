@@ -23,3 +23,15 @@ func (d Direction) String() string {
 		return "Unknown"
 	}
 }
+
+// ShortString returns a compact description of the direction.
+func (d Direction) ShortString() string {
+	switch d {
+	case DirectionCEXToDEX:
+		return "CEX→DEX"
+	case DirectionDEXToCEX:
+		return "DEX→CEX"
+	default:
+		return "???"
+	}
+}

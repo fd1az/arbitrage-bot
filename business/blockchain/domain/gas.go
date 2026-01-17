@@ -4,45 +4,69 @@ package domain
 import (
 	"math/big"
 	"time"
+
+	"github.com/fd1az/arbitrage-bot/internal/asset"
 )
 
-// GasPrice represents gas price information.
+// GasPrice represents gas price information using asset.Amount.
 type GasPrice struct {
-	Wei       *big.Int
-	Gwei      float64
-	Timestamp time.Time
+	PricePerUnit asset.Amount // Price per gas unit in ETH (wei)
+	Timestamp    time.Time
 }
 
 // NewGasPrice creates a GasPrice from wei.
-func NewGasPrice(wei *big.Int) *GasPrice {
-	gwei := new(big.Float).SetInt(wei)
-	gwei.Quo(gwei, big.NewFloat(1e9))
-	gweiFloat, _ := gwei.Float64()
-
+func NewGasPrice(weiPerGas *big.Int) *GasPrice {
 	return &GasPrice{
-		Wei:       wei,
-		Gwei:      gweiFloat,
-		Timestamp: time.Now(),
+		PricePerUnit: asset.NewAmount(asset.ETH, weiPerGas),
+		Timestamp:    time.Now(),
 	}
+}
+
+// Wei returns the gas price in wei.
+func (g *GasPrice) Wei() *big.Int {
+	return g.PricePerUnit.Raw()
+}
+
+// Gwei returns the gas price in gwei (for display).
+func (g *GasPrice) Gwei() float64 {
+	// 1 gwei = 1e9 wei, ETH has 18 decimals
+	// So gwei = wei / 1e9 = ToDecimal * 1e9
+	return g.PricePerUnit.ToFloat64() * 1e9
 }
 
 // GasEstimate represents estimated gas costs for an operation.
 type GasEstimate struct {
-	GasLimit  uint64
-	GasPrice  *GasPrice
-	TotalWei  *big.Int
-	TotalGwei float64
+	GasLimit uint64       // Gas units needed
+	GasPrice *GasPrice    // Price per gas unit
+	TotalCost asset.Amount // Total cost in ETH (gasLimit * gasPrice)
 }
 
-// CalculateGasEstimate computes the total gas cost.
-func CalculateGasEstimate(gasLimit uint64, gasPrice *GasPrice) *GasEstimate {
-	totalWei := new(big.Int).Mul(gasPrice.Wei, big.NewInt(int64(gasLimit)))
-	totalGwei := gasPrice.Gwei * float64(gasLimit)
+// NewGasEstimate creates a GasEstimate from gas parameters.
+func NewGasEstimate(gasLimit uint64, gasPrice *GasPrice) *GasEstimate {
+	// Total = gasLimit * pricePerUnit
+	totalWei := new(big.Int).Mul(
+		big.NewInt(int64(gasLimit)),
+		gasPrice.Wei(),
+	)
 
 	return &GasEstimate{
 		GasLimit:  gasLimit,
 		GasPrice:  gasPrice,
-		TotalWei:  totalWei,
-		TotalGwei: totalGwei,
+		TotalCost: asset.NewAmount(asset.ETH, totalWei),
 	}
+}
+
+// TotalWei returns the total gas cost in wei.
+func (e *GasEstimate) TotalWei() *big.Int {
+	return e.TotalCost.Raw()
+}
+
+// TotalETH returns the total gas cost in ETH (for display).
+func (e *GasEstimate) TotalETH() float64 {
+	return e.TotalCost.ToFloat64()
+}
+
+// TotalGwei returns the total gas cost in gwei (for display).
+func (e *GasEstimate) TotalGwei() float64 {
+	return e.TotalCost.ToFloat64() * 1e9
 }
