@@ -23,30 +23,30 @@ The bot follows a hexagonal (ports & adapters) architecture with domain-driven d
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     CEX-DEX ARBITRAGE BOT                        │
+│                     CEX-DEX ARBITRAGE BOT                       │
 ├─────────────────────────────────────────────────────────────────┤
-│  EXTERNAL SOURCES                                                │
+│  EXTERNAL SOURCES                                               │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐                       │
 │  │ Binance  │  │ Ethereum │  │ Uniswap  │                       │
 │  │ WS + HTTP│  │ WebSocket│  │ Quoter   │                       │
 │  └────┬─────┘  └────┬─────┘  └────┬─────┘                       │
-│       │             │             │                              │
-│       ▼             ▼             ▼                              │
+│       │             │             │                             │
+│       ▼             ▼             ▼                             │
 │  ┌─────────────────────────────────────────────────────────┐    │
-│  │              INFRASTRUCTURE LAYER                        │    │
-│  │  wsconn │ httpclient │ Binance │ Uniswap │ Ethereum      │    │
+│  │              INFRASTRUCTURE LAYER                       │    │
+│  │  wsconn │ httpclient │ Binance │ Uniswap │ Ethereum     │    │
 │  └─────────────────────────────────────────────────────────┘    │
-│                          │                                       │
-│                          ▼                                       │
+│                          │                                      │
+│                          ▼                                      │
 │  ┌─────────────────────────────────────────────────────────┐    │
-│  │              APPLICATION LAYER                           │    │
-│  │  Pricing Service │ Arbitrage Detector │ Profit Calculator│    │
+│  │              APPLICATION LAYER                           │   │
+│  │  Pricing Service │ Arbitrage Detector │ Profit Calculator│   │
 │  └─────────────────────────────────────────────────────────┘    │
-│                          │                                       │
-│                          ▼                                       │
+│                          │                                      │
+│                          ▼                                      │
 │  ┌─────────────────────────────────────────────────────────┐    │
-│  │              PRESENTATION LAYER                          │    │
-│  │         TUI (Bubble Tea)  │  CLI (debug logs)            │    │
+│  │              PRESENTATION LAYER                         │    │
+│  │         TUI (Bubble Tea)  │  CLI (debug logs)           │    │
 │  └─────────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────┘
 ```
