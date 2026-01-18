@@ -54,6 +54,8 @@ The bot follows a hexagonal (ports & adapters) architecture with domain-driven d
 For detailed documentation see:
 - [Architecture](docs/architecture.md) - System design and module structure
 - [Data Flow](docs/dataflow.md) - How data flows through the system
+- [Profiling](docs/profiling.md) - Memory profiling with pprof
+- [MEV Risks](docs/mev-risks.md) - MEV attack vectors and mitigations
 
 ## Quick Start
 
@@ -67,8 +69,9 @@ For detailed documentation see:
 Create a `.env` file:
 
 ```bash
-# Required
-INFURA_API_KEY=your_infura_key_here
+# Required - Ethereum RPC URLs (Infura, Alchemy, etc.)
+ETH_WS_URL=wss://mainnet.infura.io/ws/v3/your_api_key_here
+ETH_HTTP_URL=https://mainnet.infura.io/v3/your_api_key_here
 
 # Optional (for telemetry)
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
@@ -78,17 +81,20 @@ OTEL_SERVICE_NAME=arbitrage-bot
 ### Running
 
 ```bash
-# Build
-go build -o arbitrage ./cmd/arbitrage
+# Build and run (TUI mode by default)
+make run
 
-# Run with TUI (default)
-./arbitrage
+# Run in TUI mode explicitly
+make run-tui
 
 # Run with CLI mode (debug logs)
-./arbitrage --cli
+./bin/arbitrage-bot --cli
 
 # Run with custom config
-./arbitrage --config /path/to/config.yaml
+./bin/arbitrage-bot --config /path/to/config.yaml
+
+# Development mode with hot reload
+make dev
 ```
 
 ### Sample Output (CLI Mode)
@@ -152,46 +158,102 @@ binance:
   stale_timeout: 5s          # Time before data is considered stale
 ```
 
-## Useful Commands
+## Make Commands
 
 ```bash
-# Build
-go build ./cmd/arbitrage
+make help              # Show all available commands
 
-# Run tests
-go test ./...
+# Build & Run
+make build             # Build the binary
+make run               # Build and run
+make run-tui           # Run in TUI mode
+make dev               # Hot reload development mode
 
-# Run tests with race detector
-go test -race ./...
+# Testing
+make test              # Run all tests with race detector
+make test-coverage     # Generate coverage report
+make test-short        # Run short tests only
+make bench             # Run benchmarks
 
-# Run specific package tests
-go test -v ./internal/wsconn/...
+# Code Quality
+make fmt               # Format code
+make vet               # Run go vet
+make lint              # Run golangci-lint
+make check             # Run all quality checks (fmt, vet, lint)
 
+# Setup & Dependencies
+make setup             # Initial project setup (tools + deps)
+make deps              # Download dependencies
+make tidy              # Tidy Go modules
+make install-tools     # Install dev tools (air, golangci-lint, mockery)
+
+# Other
+make clean             # Remove build artifacts
+make mocks             # Generate test mocks
+make docker-build      # Build Docker image
+make docker-run        # Run in Docker
+```
+
+```bash
 # Health check (when running)
 curl http://localhost:8081/health
 
 # Prometheus metrics
 curl http://localhost:9090/metrics
-
-# Lint
-golangci-lint run
 ```
 
 ## Observability
 
 ### Metrics (Prometheus)
 
-The bot exposes metrics on `:9090/metrics`. Key metrics:
+The bot exposes metrics on `:9090/metrics`.
 
-| Metric | Description |
-|--------|-------------|
-| `binance_messages_total` | Total WebSocket messages received |
-| `binance_depth_updates_total` | Orderbook depth updates |
-| `http_client_requests_total` | HTTP fallback requests (labels: provider, success, endpoint) |
-| `ws_connection_state` | WebSocket state (0=disconnected, 2=connected) |
-| `ws_messages_dropped_total` | Messages dropped due to buffer full |
-| `ws_pings_total` | Successful ping/pong heartbeats |
-| `gas_price_gwei` | Current gas price |
+**Arbitrage Detection:**
+
+| Metric | Type | Description |
+|--------|------|-------------|
+| `arbitrage_opportunities_analyzed_total` | Counter | Total opportunities analyzed |
+| `arbitrage_opportunities_profitable_total` | Counter | Profitable opportunities detected |
+| `arbitrage_spread_bps` | Histogram | Spread distribution in basis points |
+| `arbitrage_net_profit_usd` | Histogram | Net profit distribution in USD |
+| `arbitrage_analysis_latency_ms` | Histogram | Time to analyze each opportunity |
+
+**Binance (CEX):**
+
+| Metric | Type | Description |
+|--------|------|-------------|
+| `binance_messages_total` | Counter | WebSocket messages received |
+| `binance_depth_updates_total` | Counter | Orderbook depth updates |
+| `binance_trades_total` | Counter | Trade messages received |
+| `binance_parse_errors_total` | Counter | JSON parse errors |
+
+**Uniswap (DEX):**
+
+| Metric | Type | Description |
+|--------|------|-------------|
+| `uniswap_quotes_total` | Counter | Quote requests made |
+| `uniswap_quote_latency_ms` | Histogram | Quote response time |
+| `uniswap_quote_errors_total` | Counter | Failed quotes |
+
+**Blockchain:**
+
+| Metric | Type | Description |
+|--------|------|-------------|
+| `blocks_received_total` | Counter | Ethereum blocks processed |
+| `gas_price_gwei` | Gauge | Current gas price |
+| `block_latency_ms` | Histogram | Block processing latency |
+| `http_fallback_used_total` | Counter | HTTP fallback activations |
+
+**WebSocket:**
+
+| Metric | Type | Description |
+|--------|------|-------------|
+| `ws_connection_state` | Gauge | Connection state (0=disconnected, 2=connected) |
+| `ws_messages_received_total` | Counter | Messages received |
+| `ws_messages_dropped_total` | Counter | Messages dropped (buffer full) |
+| `ws_reconnects_total` | Counter | Reconnection attempts |
+| `ws_message_latency_ms` | Histogram | Message processing latency |
+| `ws_pings_total` | Counter | Successful ping/pong heartbeats |
 
 **Useful PromQL queries:**
 
@@ -326,6 +388,91 @@ docker-compose up -d
 
 # Run the bot
 ./arbitrage  # Exports metrics to :9090, traces to Zipkin
+```
+
+## Future Extensions
+
+The following features are documented for future implementation when trade execution is added.
+
+### Confidence Scoring
+
+A weighted scoring system to evaluate opportunity quality before execution:
+
+```go
+type ConfidenceScore struct {
+    Score   float64            // 0.0 - 1.0
+    Factors map[string]float64 // Breakdown by factor
+}
+
+// Weights for confidence calculation
+weights := map[string]float64{
+    "spread_magnitude":   0.25, // Higher spread = more confidence
+    "liquidity_depth":    0.20, // More liquidity = more confidence
+    "data_freshness":     0.20, // Fresher data = more confidence
+    "historical_success": 0.15, // Past success rate
+    "volatility":         0.10, // Lower volatility = more confidence
+    "gas_stability":      0.10, // Stable gas = more confidence
+}
+```
+
+**Implementation path:**
+1. Create `business/arbitrage/domain/confidence.go`
+2. Add `ConfidenceCalculator` with configurable weights
+3. Integrate with `Detector` behind a feature flag
+4. Add confidence score to opportunity output
+
+### MEV Risk Model
+
+Quantify MEV exposure for each opportunity:
+
+```go
+type MEVRisk struct {
+    Level       string  // "low", "medium", "high", "critical"
+    Score       float64 // 0-1
+    Explanation string
+}
+
+// Risk increases with:
+// - Smaller spreads (more competition)
+// - Larger trade sizes (more profitable to sandwich)
+// - Higher gas prices (more MEV activity)
+```
+
+**Risk matrix:**
+
+| Spread | Size | Risk Level |
+|--------|------|------------|
+| < 20 bps | Any | Low (not worth MEV bot's gas) |
+| 20-50 bps | > 10 ETH | High |
+| 50-100 bps | < 10 ETH | Medium |
+| > 100 bps | Any | Variable (execute fast) |
+
+**Implementation path:**
+1. Create `business/arbitrage/domain/mev.go`
+2. Add `CalculateMEVRisk(spread, size, gasPrice)` function
+3. Include MEV risk in opportunity reports
+4. See [MEV Risks](docs/mev-risks.md) for detailed analysis
+
+### Feature Flags
+
+Simple feature flag system for gradual rollout:
+
+```bash
+# Enable via environment variables
+FF_CONFIDENCE_SCORING=true
+FF_MEV_RISK_DISPLAY=true
+```
+
+```go
+// internal/features/flags.go
+func Enabled(name string) bool {
+    return os.Getenv("FF_" + strings.ToUpper(name)) == "true"
+}
+
+// Usage
+if features.Enabled("confidence_scoring") {
+    opp.Confidence = calculator.Calculate(opp)
+}
 ```
 
 ## License

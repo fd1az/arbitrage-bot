@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	_ "net/http/pprof" // Expone /debug/pprof/* para profiling (heap, allocs, goroutines, etc.)
 	"os"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
