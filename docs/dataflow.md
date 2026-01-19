@@ -401,50 +401,50 @@ Results are sent to the TUI or CLI for display.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                        COMPLETE DETECTION CYCLE                              │
+│                        COMPLETE DETECTION CYCLE                             │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  Time ──────────────────────────────────────────────────────────────►       │
 │                                                                             │
-│  T+0ms    Ethereum emits new block #21000000                               │
+│  T+0ms    Ethereum emits new block #21000000                                │
 │     │                                                                       │
 │     ▼                                                                       │
-│  T+50ms   Subscriber receives block via WebSocket                          │
-│     │     └── Sends to blocks channel                                      │
+│  T+50ms   Subscriber receives block via WebSocket                           │
+│     │     └── Sends to blocks channel                                       │
 │     ▼                                                                       │
-│  T+51ms   Detector.onNewBlock() triggered                                  │
-│     │     ├── Updates block in reporter                                    │
-│     │     └── Fetches current gas price                                    │
+│  T+51ms   Detector.onNewBlock() triggered                                   │
+│     │     ├── Updates block in reporter                                     │
+│     │     └── Fetches current gas price                                     │
 │     ▼                                                                       │
-│  T+52ms   Detector.processPair(ETH/USDC) for each trade size               │
+│  T+52ms   Detector.processPair(ETH/USDC) for each trade size                │
 │     │                                                                       │
-│     │     ┌─────────────────────────────────────────────┐                  │
-│     │     │  Trade Size: 1 ETH                          │                  │
-│     │     │  T+52ms  Get Binance price (from cache)     │                  │
-│     │     │  T+53ms  Get Uniswap quote (RPC call)       │                  │
-│     │     │  T+150ms Calculate spread, gas, profit      │                  │
-│     │     │  T+151ms Report to TUI                      │                  │
-│     │     └─────────────────────────────────────────────┘                  │
+│     │     ┌─────────────────────────────────────────────┐                   │
+│     │     │  Trade Size: 1 ETH                          │                   │
+│     │     │  T+52ms  Get Binance price (from cache)     │                   │
+│     │     │  T+53ms  Get Uniswap quote (RPC call)       │                   │
+│     │     │  T+150ms Calculate spread, gas, profit      │                   │
+│     │     │  T+151ms Report to TUI                      │                   │
+│     │     └─────────────────────────────────────────────┘                   │
 │     │                                                                       │
-│     │     ┌─────────────────────────────────────────────┐                  │
-│     │     │  Trade Size: 10 ETH                         │                  │
-│     │     │  T+152ms Get Binance price (from cache)     │                  │
-│     │     │  T+153ms Get Uniswap quote (RPC call)       │                  │
-│     │     │  T+250ms Calculate spread, gas, profit      │                  │
-│     │     │  T+251ms Report to TUI                      │                  │
-│     │     └─────────────────────────────────────────────┘                  │
+│     │     ┌─────────────────────────────────────────────┐                   │
+│     │     │  Trade Size: 10 ETH                         │                   │
+│     │     │  T+152ms Get Binance price (from cache)     │                   │
+│     │     │  T+153ms Get Uniswap quote (RPC call)       │                   │
+│     │     │  T+250ms Calculate spread, gas, profit      │                   │
+│     │     │  T+251ms Report to TUI                      │                   │
+│     │     └─────────────────────────────────────────────┘                   │
 │     │                                                                       │
-│     │     ┌─────────────────────────────────────────────┐                  │
-│     │     │  Trade Size: 100 ETH                        │                  │
-│     │     │  T+252ms Get Binance price (from cache)     │                  │
-│     │     │  T+253ms Get Uniswap quote (RPC call)       │                  │
-│     │     │  T+350ms Calculate spread, gas, profit      │                  │
-│     │     │  T+351ms Report to TUI                      │                  │
-│     │     │  T+352ms Send best cost breakdown           │                  │
-│     │     └─────────────────────────────────────────────┘                  │
+│     │     ┌─────────────────────────────────────────────┐                   │
+│     │     │  Trade Size: 100 ETH                        │                   │
+│     │     │  T+252ms Get Binance price (from cache)     │                   │
+│     │     │  T+253ms Get Uniswap quote (RPC call)       │                   │
+│     │     │  T+350ms Calculate spread, gas, profit      │                   │
+│     │     │  T+351ms Report to TUI                      │                   │
+│     │     │  T+352ms Send best cost breakdown           │                   │
+│     │     └─────────────────────────────────────────────┘                   │
 │     │                                                                       │
 │     ▼                                                                       │
-│  T+400ms  Cycle complete, wait for next block (~12 seconds)                │
+│  T+400ms  Cycle complete, wait for next block (~12 seconds)                 │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```

@@ -8,57 +8,57 @@
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  EXTERNAL DATA SOURCES                                                      │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐          │
-│  │     Binance      │  │    Ethereum      │  │     Uniswap      │          │
-│  │    WebSocket     │  │    WebSocket     │  │   Quoter V3      │          │
-│  │   (CEX Prices)   │  │    (Blocks)      │  │   (DEX Quotes)   │          │
-│  └────────┬─────────┘  └────────┬─────────┘  └────────┬─────────┘          │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐           │
+│  │     Binance      │  │    Ethereum      │  │     Uniswap      │           │
+│  │    WebSocket     │  │    WebSocket     │  │   Quoter V3      │           │
+│  │   (CEX Prices)   │  │    (Blocks)      │  │   (DEX Quotes)   │           │
+│  └────────┬─────────┘  └────────┬─────────┘  └────────┬─────────┘           │
 │           │                     │                     │                     │
 │           │ Book Ticker         │ New Block           │ Quote Request       │
 │           │ Depth Updates       │ (trigger)           │ (on-demand)         │
 │           ▼                     ▼                     ▼                     │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                        INFRASTRUCTURE LAYER                          │   │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌────────────┐  │   │
-│  │  │  wsconn     │  │  Ethereum   │  │  Binance    │  │  Uniswap   │  │   │
-│  │  │  (generic   │  │  Subscriber │  │  Provider   │  │  Provider  │  │   │
-│  │  │  WS client) │  │             │  │  (orderbook)│  │  (quoter)  │  │   │
-│  │  └─────────────┘  └─────────────┘  └─────────────┘  └────────────┘  │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                        INFRASTRUCTURE LAYER                         │    │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌────────────┐  │    │
+│  │  │  wsconn     │  │  Ethereum   │  │  Binance    │  │  Uniswap   │  │    │
+│  │  │  (generic   │  │  Subscriber │  │  Provider   │  │  Provider  │  │    │
+│  │  │  WS client) │  │             │  │  (orderbook)│  │  (quoter)  │  │    │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘  └────────────┘  │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
 │                                    │                                        │
 │                                    ▼                                        │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                         APPLICATION LAYER                            │   │
-│  │  ┌─────────────────────────────────────────────────────────────┐    │   │
-│  │  │                    PRICING SERVICE                           │    │   │
-│  │  │  - Aggregates CEX (Binance) and DEX (Uniswap) prices        │    │   │
-│  │  │  - Constructs PriceSnapshot for comparison                   │    │   │
-│  │  │  - Manages orderbook state (in-memory cache)                 │    │   │
-│  │  └─────────────────────────────────────────────────────────────┘    │   │
-│  │                                │                                     │   │
-│  │                                ▼                                     │   │
-│  │  ┌─────────────────────────────────────────────────────────────┐    │   │
-│  │  │                   ARBITRAGE DETECTOR                         │    │   │
-│  │  │  - Listens for new blocks (trigger)                         │    │   │
-│  │  │  - Fetches price snapshots for configured pairs             │    │   │
-│  │  │  - Calculates spread (CEX vs DEX)                           │    │   │
-│  │  │  - Estimates gas costs                                       │    │   │
-│  │  │  - Computes profit (gross - gas - fees)                     │    │   │
-│  │  │  - Identifies profitable opportunities                       │    │   │
-│  │  └─────────────────────────────────────────────────────────────┘    │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                         APPLICATION LAYER                           │    │
+│  │  ┌─────────────────────────────────────────────────────────────┐    │    │
+│  │  │                    PRICING SERVICE                          │    │    │
+│  │  │  - Aggregates CEX (Binance) and DEX (Uniswap) prices        │    │    │
+│  │  │  - Constructs PriceSnapshot for comparison                  │    │    │
+│  │  │  - Manages orderbook state (in-memory cache)                │    │    │
+│  │  └─────────────────────────────────────────────────────────────┘    │    │
+│  │                                │                                    │    │
+│  │                                ▼                                    │    │
+│  │  ┌─────────────────────────────────────────────────────────────┐    │    │
+│  │  │                   ARBITRAGE DETECTOR                        │    │    │
+│  │  │  - Listens for new blocks (trigger)                         │    │    │
+│  │  │  - Fetches price snapshots for configured pairs             │    │    │
+│  │  │  - Calculates spread (CEX vs DEX)                           │    │    │
+│  │  │  - Estimates gas costs                                      │    │    │
+│  │  │  - Computes profit (gross - gas - fees)                     │    │    │
+│  │  │  - Identifies profitable opportunities                      │    │    │
+│  │  └─────────────────────────────────────────────────────────────┘    │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
 │                                    │                                        │
 │                                    ▼                                        │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                         PRESENTATION LAYER                           │   │
-│  │  ┌─────────────────────┐        ┌─────────────────────┐             │   │
-│  │  │    TUI (default)    │        │    CLI (debug)      │             │   │
-│  │  │  - Bubble Tea UI    │        │  - Structured logs  │             │   │
-│  │  │  - Real-time prices │        │  - JSON output      │             │   │
-│  │  │  - Opportunities    │        │  - Full trace       │             │   │
-│  │  │  - Cost breakdown   │        │                     │             │   │
-│  │  └─────────────────────┘        └─────────────────────┘             │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                         PRESENTATION LAYER                          │    │
+│  │  ┌─────────────────────┐        ┌─────────────────────┐             │    │
+│  │  │    TUI (default)    │        │    CLI (debug)      │             │    │
+│  │  │  - Bubble Tea UI    │        │  - Structured logs  │             │    │
+│  │  │  - Real-time prices │        │  - JSON output      │             │    │
+│  │  │  - Opportunities    │        │  - Full trace       │             │    │
+│  │  │  - Cost breakdown   │        │                     │             │    │
+│  │  └─────────────────────┘        └─────────────────────┘             │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -150,7 +150,7 @@ arbitrage-bot/
                     │  │       DOMAIN LAYER        │  │
                     │  │  - Opportunity            │  │
                     │  │  - Spread                 │  │
-     DRIVING        │  │  - ProfitResult          │  │        DRIVEN
+     DRIVING        │  │  - ProfitResult           │  │        DRIVEN
      ADAPTERS       │  └───────────────────────────┘  │       ADAPTERS
   (Primary Ports)   │  ┌───────────────────────────┐  │   (Secondary Ports)
         │           │  │    APPLICATION LAYER      │  │           │
