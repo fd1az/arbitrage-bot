@@ -342,47 +342,47 @@ Results are sent to the TUI or CLI for display.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           REPORTING FLOW                                     │
+│                           REPORTING FLOW                                    │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │   Detector                                                                  │
 │       │                                                                     │
-│       ├── reporter.UpdatePrices(snapshot)                                  │
-│       │       └── ui.Send(PriceUpdateMsg{Snapshot})                        │
+│       ├── reporter.UpdatePrices(snapshot)                                   │
+│       │       └── ui.Send(PriceUpdateMsg{Snapshot})                         │
 │       │                                                                     │
-│       ├── reporter.UpdateBlock(blockNumber)                                │
-│       │       └── ui.Send(BlockMsg{Number})                                │
+│       ├── reporter.UpdateBlock(blockNumber)                                 │
+│       │       └── ui.Send(BlockMsg{Number})                                 │
 │       │                                                                     │
-│       ├── reporter.UpdateGasPrice(gweiPrice)                               │
-│       │       └── ui.Send(GasPriceMsg{GweiPrice})                          │
+│       ├── reporter.UpdateGasPrice(gweiPrice)                                │
+│       │       └── ui.Send(GasPriceMsg{GweiPrice})                           │
 │       │                                                                     │
-│       ├── reporter.UpdateCostBreakdown(breakdown)                          │
-│       │       └── ui.Send(CostBreakdownMsg{...})                           │
+│       ├── reporter.UpdateCostBreakdown(breakdown)                           │
+│       │       └── ui.Send(CostBreakdownMsg{...})                            │
 │       │                                                                     │
-│       └── reporter.Report(opportunity)  // if profitable                   │
-│               └── ui.Send(OpportunityMsg{Opportunity})                     │
+│       └── reporter.Report(opportunity)  // if profitable                    │
+│               └── ui.Send(OpportunityMsg{Opportunity})                      │
 │                                                                             │
-│   ┌─────────────────────────────────────────────────────────────┐          │
-│   │              TUI (Bubble Tea)                                │          │
-│   │  pkg/ui/tui.go                                              │          │
-│   │                                                              │          │
-│   │  Update(msg) (tea.Model, tea.Cmd)                           │          │
-│   │    switch msg.(type) {                                      │          │
-│   │    case PriceUpdateMsg:                                     │          │
-│   │        m.prices.Update(snapshot)                            │          │
-│   │    case BlockMsg:                                           │          │
-│   │        m.currentBlock = msg.Number                          │          │
-│   │    case OpportunityMsg:                                     │          │
-│   │        m.opportunities.Add(opportunity)                     │          │
-│   │    case CostBreakdownMsg:                                   │          │
-│   │        m.prices.SetCostBreakdown(msg)                       │          │
-│   │    }                                                        │          │
-│   │                                                              │          │
-│   │  View() string                                              │          │
-│   │    ├── renderStatusBar()  // Block, Gas, Connections        │          │
-│   │    ├── prices.View()      // Price table + Cost breakdown   │          │
-│   │    └── opportunities.View() // Opportunity list             │          │
-│   └─────────────────────────────────────────────────────────────┘          │
+│   ┌─────────────────────────────────────────────────────────────┐           │
+│   │              TUI (Bubble Tea)                               │           │
+│   │  pkg/ui/tui.go                                              │           │
+│   │                                                             │           │
+│   │  Update(msg) (tea.Model, tea.Cmd)                           │           │
+│   │    switch msg.(type) {                                      │           │
+│   │    case PriceUpdateMsg:                                     │           │
+│   │        m.prices.Update(snapshot)                            │           │
+│   │    case BlockMsg:                                           │           │
+│   │        m.currentBlock = msg.Number                          │           │
+│   │    case OpportunityMsg:                                     │           │
+│   │        m.opportunities.Add(opportunity)                     │           │
+│   │    case CostBreakdownMsg:                                   │           │
+│   │        m.prices.SetCostBreakdown(msg)                       │           │
+│   │    }                                                        │           │
+│   │                                                             │           │
+│   │  View() string                                              │           │
+│   │    ├── renderStatusBar()  // Block, Gas, Connections        │           │
+│   │    ├── prices.View()      // Price table + Cost breakdown   │           │
+│   │    └── opportunities.View() // Opportunity list             │           │
+│   └─────────────────────────────────────────────────────────────┘           │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
