@@ -12,50 +12,50 @@ New blocks from Ethereum trigger the entire detection cycle.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           BLOCK SUBSCRIPTION                                 │
+│                           BLOCK SUBSCRIPTION                                │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │   Ethereum Node                                                             │
 │       │                                                                     │
-│       │ eth_subscribe("newHeads")                                          │
+│       │ eth_subscribe("newHeads")                                           │
 │       ▼                                                                     │
-│   ┌─────────────────────────────────────────────────────────────┐          │
-│   │              SUBSCRIBER (WebSocket Primary)                  │          │
-│   │  business/blockchain/infra/ethereum/subscriber.go           │          │
-│   │                                                              │          │
-│   │  - Maintains WebSocket connection to Ethereum node          │          │
-│   │  - Reconnects automatically with exponential backoff        │          │
-│   │  - Circuit breaker prevents repeated failures               │          │
-│   └─────────────────────────────────────────────────────────────┘          │
+│   ┌─────────────────────────────────────────────────────────────┐           │
+│   │              SUBSCRIBER (WebSocket Primary)                 │           │
+│   │  business/blockchain/infra/ethereum/subscriber.go           │           │
+│   │                                                             │           │
+│   │  - Maintains WebSocket connection to Ethereum node          │           │
+│   │  - Reconnects automatically with exponential backoff        │           │
+│   │  - Circuit breaker prevents repeated failures               │           │
+│   └─────────────────────────────────────────────────────────────┘           │
 │       │                                                                     │
-│       │ (if WebSocket fails)                                               │
+│       │ (if WebSocket fails)                                                │
 │       ▼                                                                     │
-│   ┌─────────────────────────────────────────────────────────────┐          │
-│   │              HTTP POLLING (Fallback)                         │          │
-│   │                                                              │          │
-│   │  - Polls eth_blockNumber every 12 seconds                   │          │
-│   │  - Fetches block header with eth_getBlockByNumber           │          │
-│   │  - Separate circuit breaker from WebSocket                  │          │
-│   └─────────────────────────────────────────────────────────────┘          │
+│   ┌─────────────────────────────────────────────────────────────┐           │
+│   │              HTTP POLLING (Fallback)                        │           │
+│   │                                                             │           │
+│   │  - Polls eth_blockNumber every 12 seconds                   │           │
+│   │  - Fetches block header with eth_getBlockByNumber           │           │
+│   │  - Separate circuit breaker from WebSocket                  │           │
+│   └─────────────────────────────────────────────────────────────┘           │
 │       │                                                                     │
-│       │ Block{Number, Hash, Timestamp, GasLimit, GasUsed}                  │
+│       │ Block{Number, Hash, Timestamp, GasLimit, GasUsed}                   │
 │       ▼                                                                     │
-│   ┌─────────────────────────────────────────────────────────────┐          │
-│   │              BLOCKS CHANNEL (buffered: 16)                   │          │
-│   │                                                              │          │
-│   │  chan *domain.Block                                         │          │
-│   │  WARNING: Drops blocks if buffer full (logged)              │          │
-│   └─────────────────────────────────────────────────────────────┘          │
+│   ┌─────────────────────────────────────────────────────────────┐           │
+│   │              BLOCKS CHANNEL (buffered: 16)                  │           │
+│   │                                                             │           │
+│   │  chan *domain.Block                                         │           │
+│   │  WARNING: Drops blocks if buffer full (logged)              │           │
+│   └─────────────────────────────────────────────────────────────┘           │
 │       │                                                                     │
 │       ▼                                                                     │
-│   ┌─────────────────────────────────────────────────────────────┐          │
-│   │              DETECTOR (Consumer)                             │          │
-│   │  business/arbitrage/app/detector.go                         │          │
-│   │                                                              │          │
-│   │  for block := range blocks {                                │          │
-│   │      d.onNewBlock(ctx, block)                               │          │
-│   │  }                                                          │          │
-│   └─────────────────────────────────────────────────────────────┘          │
+│   ┌─────────────────────────────────────────────────────────────┐           │
+│   │              DETECTOR (Consumer)                            │           │
+│   │  business/arbitrage/app/detector.go                         │           │
+│   │                                                             │           │
+│   │  for block := range blocks {                                │           │
+│   │      d.onNewBlock(ctx, block)                               │           │
+│   │  }                                                          │           │
+│   └─────────────────────────────────────────────────────────────┘           │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -72,53 +72,53 @@ On each new block, prices are fetched from both CEX and DEX.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           PRICE FETCHING                                     │
+│                           PRICE FETCHING                                    │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │   onNewBlock(block)                                                         │
 │       │                                                                     │
-│       │ For each configured pair (e.g., ETH/USDC)                          │
-│       │ For each trade size (e.g., 1, 10, 100 ETH)                         │
+│       │ For each configured pair (e.g., ETH/USDC)                           │
+│       │ For each trade size (e.g., 1, 10, 100 ETH)                          │
 │       ▼                                                                     │
-│   ┌─────────────────────────────────────────────────────────────┐          │
-│   │              PRICING SERVICE                                 │          │
-│   │  business/pricing/app/service.go                            │          │
-│   │                                                              │          │
-│   │  GetPriceSnapshot(ctx, pair, tradeSize) *PriceSnapshot      │          │
-│   └──────────────────────┬──────────────────────────────────────┘          │
+│   ┌─────────────────────────────────────────────────────────────┐           │
+│   │              PRICING SERVICE                                │           │
+│   │  business/pricing/app/service.go                            │           │
+│   │                                                             │           │
+│   │  GetPriceSnapshot(ctx, pair, tradeSize) *PriceSnapshot      │           │
+│   └──────────────────────┬──────────────────────────────────────┘           │
 │                          │                                                  │
-│          ┌───────────────┴───────────────┐                                 │
-│          ▼                               ▼                                 │
-│   ┌──────────────────┐          ┌──────────────────┐                       │
-│   │  CEX PROVIDER    │          │  DEX PROVIDER    │                       │
-│   │  (Binance)       │          │  (Uniswap)       │                       │
-│   └────────┬─────────┘          └────────┬─────────┘                       │
+│          ┌───────────────┴───────────────┐                                  │
+│          ▼                               ▼                                  │
+│   ┌──────────────────┐          ┌──────────────────┐                        │
+│   │  CEX PROVIDER    │          │  DEX PROVIDER    │                        │
+│   │  (Binance)       │          │  (Uniswap)       │                        │
+│   └────────┬─────────┘          └────────┬─────────┘                        │
 │            │                             │                                  │
 │            ▼                             ▼                                  │
-│   ┌──────────────────┐          ┌──────────────────┐                       │
-│   │  ORDERBOOK       │          │  QUOTER V3       │                       │
-│   │  (in-memory)     │          │  (contract call) │                       │
-│   │                  │          │                  │                       │
-│   │  - Top 20 bids   │          │  - Quote for     │                       │
-│   │  - Top 20 asks   │          │    exact input   │                       │
-│   │  - VWAP calc     │          │  - Tries 4 fee   │                       │
-│   │    per size      │          │    tiers         │                       │
-│   └────────┬─────────┘          └────────┬─────────┘                       │
+│   ┌──────────────────┐          ┌──────────────────┐                        │
+│   │  ORDERBOOK       │          │  QUOTER V3       │                        │
+│   │  (in-memory)     │          │  (contract call) │                        │
+│   │                  │          │                  │                        │
+│   │  - Top 20 bids   │          │  - Quote for     │                        │
+│   │  - Top 20 asks   │          │    exact input   │                        │
+│   │  - VWAP calc     │          │  - Tries 4 fee   │                        │
+│   │    per size      │          │    tiers         │                        │
+│   └────────┬─────────┘          └────────┬─────────┘                        │
 │            │                             │                                  │
 │            │ CEXAsk, CEXBid              │ DEXQuote                         │
-│            └──────────────┬──────────────┘                                 │
+│            └──────────────┬──────────────┘                                  │
 │                           ▼                                                 │
-│   ┌─────────────────────────────────────────────────────────────┐          │
-│   │              PRICE SNAPSHOT                                  │          │
-│   │                                                              │          │
-│   │  {                                                          │          │
-│   │    Pair:     "ETH/USDC",                                    │          │
-│   │    CEXAsk:   {Rate: 3400.50, Size: 10},                     │          │
-│   │    CEXBid:   {Rate: 3400.00, Size: 10},                     │          │
-│   │    DEXQuote: {Price: 3395.00, AmountOut: 33950},            │          │
-│   │    Timestamp: now()                                         │          │
-│   │  }                                                          │          │
-│   └─────────────────────────────────────────────────────────────┘          │
+│   ┌─────────────────────────────────────────────────────────────┐           │
+│   │              PRICE SNAPSHOT                                 │           │
+│   │                                                             │           │
+│   │  {                                                          │           │
+│   │    Pair:     "ETH/USDC",                                    │           │
+│   │    CEXAsk:   {Rate: 3400.50, Size: 10},                     │           │
+│   │    CEXBid:   {Rate: 3400.00, Size: 10},                     │           │
+│   │    DEXQuote: {Price: 3395.00, AmountOut: 33950},            │           │
+│   │    Timestamp: now()                                         │           │
+│   │  }                                                          │           │
+│   └─────────────────────────────────────────────────────────────┘           │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -138,77 +138,77 @@ Binance prices are continuously updated via WebSocket, with automatic HTTP fallb
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    BINANCE DATA FLOW (WS + HTTP FALLBACK)                    │
+│                    BINANCE DATA FLOW (WS + HTTP FALLBACK)                   │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│   wss://stream.binance.com:9443/stream?streams=ethusdc@bookTicker/ethusdc@depth20@100ms
+│   wss://stream.binance.com:9443/stream?streams=ethusdc@bookTicker           │     /ethusdc@depth20@100ms
 │       │                                                                     │
-│       │ JSON Messages (bookTicker + partial depth)                         │
+│       │ JSON Messages (bookTicker + partial depth)                          │
 │       ▼                                                                     │
-│   ┌─────────────────────────────────────────────────────────────┐          │
-│   │              WSCONN CLIENT (Generic WebSocket)               │          │
-│   │  internal/wsconn/wsconn.go                                  │          │
-│   │                                                              │          │
-│   │  - Maintains connection with auto-reconnect                 │          │
-│   │  - Exponential backoff (1s → 30s max)                       │          │
-│   │  - Ping/pong heartbeat every 30s                            │          │
-│   │  - OTEL tracing + metrics                                   │          │
-│   │  - Message buffer (1024 messages)                           │          │
-│   │  - Max message size limit (10MB)                            │          │
-│   └─────────────────────────────────────────────────────────────┘          │
+│   ┌─────────────────────────────────────────────────────────────┐           │
+│   │              WSCONN CLIENT (Generic WebSocket)              │           │
+│   │  internal/wsconn/wsconn.go                                  │           │
+│   │                                                             │           │
+│   │  - Maintains connection with auto-reconnect                 │           │
+│   │  - Exponential backoff (1s → 30s max)                       │           │
+│   │  - Ping/pong heartbeat every 30s                            │           │
+│   │  - OTEL tracing + metrics                                   │           │
+│   │  - Message buffer (1024 messages)                           │           │
+│   │  - Max message size limit (10MB)                            │           │
+│   └─────────────────────────────────────────────────────────────┘           │
 │       │                                                                     │
 │       │ OnMessage callback                                                  │
 │       ▼                                                                     │
-│   ┌─────────────────────────────────────────────────────────────┐          │
-│   │              BINANCE CLIENT                                  │          │
-│   │  business/pricing/infra/binance/client.go                   │          │
-│   │                                                              │          │
-│   │  handleMessage(data []byte)                                 │          │
-│   │    ├── Parse JSON                                           │          │
-│   │    ├── Route by stream type                                 │          │
-│   │    └── Call registered handlers                             │          │
-│   └─────────────────────────────────────────────────────────────┘          │
+│   ┌─────────────────────────────────────────────────────────────┐           │
+│   │              BINANCE CLIENT                                 │           │
+│   │  business/pricing/infra/binance/client.go                   │           │
+│   │                                                             │           │
+│   │  handleMessage(data []byte)                                 │           │
+│   │    ├── Parse JSON                                           │           │
+│   │    ├── Route by stream type                                 │           │
+│   │    └── Call registered handlers                             │           │
+│   └─────────────────────────────────────────────────────────────┘           │
 │       │                                                                     │
-│       │ BookTickerEvent{Symbol, BidPrice, AskPrice, ...}                   │
+│       │ BookTickerEvent{Symbol, BidPrice, AskPrice, ...}                    │
 │       ▼                                                                     │
-│   ┌─────────────────────────────────────────────────────────────┐          │
-│   │              BINANCE PROVIDER                                │          │
-│   │  business/pricing/infra/binance/provider.go                 │          │
-│   │                                                              │          │
-│   │  handleBookTicker(event)  → Update best bid/ask             │          │
-│   │  handleDepthUpdate(event) → Replace top 20 levels           │          │
-│   │                                                              │          │
-│   │  orderbookState: map[symbol]*OrderbookState                 │          │
-│   │    ├── bids: []OrderbookLevel (sorted desc)                 │          │
-│   │    ├── asks: []OrderbookLevel (sorted asc)                  │          │
-│   │    ├── lastUpdate: time.Time                                │          │
-│   │    └── RWMutex protected                                    │          │
-│   └─────────────────────────────────────────────────────────────┘          │
+│   ┌─────────────────────────────────────────────────────────────┐           │
+│   │              BINANCE PROVIDER                               │           │
+│   │  business/pricing/infra/binance/provider.go                 │           │
+│   │                                                             │           │
+│   │  handleBookTicker(event)  → Update best bid/ask             │           │
+│   │  handleDepthUpdate(event) → Replace top 20 levels           │           │
+│   │                                                             │           │
+│   │  orderbookState: map[symbol]*OrderbookState                 │           │
+│   │    ├── bids: []OrderbookLevel (sorted desc)                 │           │
+│   │    ├── asks: []OrderbookLevel (sorted asc)                  │           │
+│   │    ├── lastUpdate: time.Time                                │           │
+│   │    └── RWMutex protected                                    │           │
+│   └─────────────────────────────────────────────────────────────┘           │
 │                                                                             │
-│   When GetOrderbook(pair) called:                                          │
-│   ┌─────────────────────────────────────────────────────────────┐          │
-│   │  1. Check if WS data is stale (lastUpdate > staleTimeout)   │          │
-│   │     ├── Fresh data → Return cached orderbook                │          │
-│   │     └── Stale/Empty → Trigger HTTP fallback ──────────────┐ │          │
-│   │                                                            │ │          │
-│   │  ┌──────────────────────────────────────────────────────┐  │ │          │
-│   │  │            HTTP FALLBACK (if enabled)                 │  │ │          │
-│   │  │  business/pricing/infra/binance/http_client.go       │  │ │          │
-│   │  │                                                       │  │ │          │
+│   When GetOrderbook(pair) called:                                           │
+│   ┌─────────────────────────────────────────────────────────────┐           │
+│   │  1. Check if WS data is stale (lastUpdate > staleTimeout)   │           │
+│   │     ├── Fresh data → Return cached orderbook                │           │
+│   │     └── Stale/Empty → Trigger HTTP fallback ──────────────┐ │           │
+│   │                                                           │ │           │
+│   │  ┌──────────────────────────────────────────────────────┐ │ │           │
+│   │  │            HTTP FALLBACK (if enabled)                │ │ │           │
+│   │  │  business/pricing/infra/binance/http_client.go       │ │ │           │
+│   │  │                                                      │ │ │           │
 │   │  │  GET https://api.binance.com/api/v3/depth            │◄─┘ │          │
 │   │  │      ?symbol=ETHUSDC&limit=20                        │    │          │
-│   │  │                                                       │    │          │
+│   │  │                                                      │    │          │
 │   │  │  - Instrumented with OTEL tracing                    │    │          │
 │   │  │  - Metrics: http_client_requests_total               │    │          │
 │   │  │  - Updates local cache on success                    │    │          │
 │   │  └──────────────────────────────────────────────────────┘    │          │
 │   │                                                              │          │
-│   │  2. Calculate VWAP for requested size                       │          │
-│   │     - Walk through price levels                             │          │
-│   │     - Accumulate cost until size filled                     │          │
-│   │     - avgPrice = totalCost / totalFilled                    │          │
-│   │  3. Return Price{Rate: VWAP, Size: filled}                  │          │
-│   └─────────────────────────────────────────────────────────────┘          │
+│   │  2. Calculate VWAP for requested size                        │          │
+│   │     - Walk through price levels                              │          │
+│   │     - Accumulate cost until size filled                      │          │
+│   │     - avgPrice = totalCost / totalFilled                     │          │
+│   │  3. Return Price{Rate: VWAP, Size: filled}                   │          │
+│   └──────────────────────────────────────────────────────────────┘          │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -247,83 +247,83 @@ Spread calculation and profit analysis.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           ANALYSIS FLOW                                      │
+│                           ANALYSIS FLOW                                     │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│   analyzeOpportunity(ctx, block, pair, tradeSize, gasPrice)                │
+│   analyzeOpportunity(ctx, block, pair, tradeSize, gasPrice)                 │
 │       │                                                                     │
-│       │ 1. Get Price Snapshot                                              │
+│       │ 1. Get Price Snapshot                                               │
 │       ▼                                                                     │
-│   ┌─────────────────────────────────────────────────────────────┐          │
-│   │  snapshot = pricing.GetPriceSnapshot(pair, tradeSize)       │          │
-│   │                                                              │          │
-│   │  CEX Ask: $3,400.50 (buy ETH price on Binance)              │          │
-│   │  DEX Quote: $3,395.00 (effective price on Uniswap)          │          │
-│   └─────────────────────────────────────────────────────────────┘          │
+│   ┌─────────────────────────────────────────────────────────────┐           │
+│   │  snapshot = pricing.GetPriceSnapshot(pair, tradeSize)       │           │
+│   │                                                             │           │
+│   │  CEX Ask: $3,400.50 (buy ETH price on Binance)              │           │
+│   │  DEX Quote: $3,395.00 (effective price on Uniswap)          │           │
+│   └─────────────────────────────────────────────────────────────┘           │
 │       │                                                                     │
-│       │ 2. Calculate Spread                                                │
+│       │ 2. Calculate Spread                                                 │
 │       ▼                                                                     │
-│   ┌─────────────────────────────────────────────────────────────┐          │
-│   │  spread = CalculateSpread(cexPrice, dexPrice)               │          │
-│   │                                                              │          │
-│   │  Absolute: DEX - CEX = -$5.50                               │          │
-│   │  BasisPoints: (DEX - CEX) / CEX * 10000 = -16.17 bps        │          │
-│   │  Direction: DEX_TO_CEX (DEX cheaper, buy on DEX)            │          │
-│   └─────────────────────────────────────────────────────────────┘          │
+│   ┌─────────────────────────────────────────────────────────────┐           │
+│   │  spread = CalculateSpread(cexPrice, dexPrice)               │           │
+│   │                                                             │           │
+│   │  Absolute: DEX - CEX = -$5.50                               │           │
+│   │  BasisPoints: (DEX - CEX) / CEX * 10000 = -16.17 bps        │           │
+│   │  Direction: DEX_TO_CEX (DEX cheaper, buy on DEX)            │           │
+│   └─────────────────────────────────────────────────────────────┘           │
 │       │                                                                     │
-│       │ 3. Calculate Gas Cost                                              │
+│       │ 3. Calculate Gas Cost                                               │
 │       ▼                                                                     │
-│   ┌─────────────────────────────────────────────────────────────┐          │
-│   │  gasCost = NewGasCost(gasLimit=200000, gasPrice, ethPrice)  │          │
-│   │                                                              │          │
-│   │  Gas Limit: 200,000 units (swap estimate)                   │          │
-│   │  Gas Price: 25 gwei                                         │          │
-│   │  ETH Price: $3,400                                          │          │
-│   │  Total: 200000 * 25 * 1e-9 * 3400 = $17.00                 │          │
-│   └─────────────────────────────────────────────────────────────┘          │
+│   ┌─────────────────────────────────────────────────────────────┐           │
+│   │  gasCost = NewGasCost(gasLimit=200000, gasPrice, ethPrice)  │           │
+│   │                                                             │           │
+│   │  Gas Limit: 200,000 units (swap estimate)                   │           │
+│   │  Gas Price: 25 gwei                                         │           │
+│   │  ETH Price: $3,400                                          │           │
+│   │  Total: 200000 * 25 * 1e-9 * 3400 = $17.00                  │           │
+│   └─────────────────────────────────────────────────────────────┘           │
 │       │                                                                     │
-│       │ 4. Calculate Profit                                                │
+│       │ 4. Calculate Profit                                                 │
 │       ▼                                                                     │
-│   ┌─────────────────────────────────────────────────────────────┐          │
-│   │  profit = calculator.Calculate(spread, tradeSize, gasCost)  │          │
-│   │                                                              │          │
-│   │  Trade Value: 10 ETH * $3,400 = $34,000                     │          │
-│   │  Gross Profit: |spread| * size = $55.00                     │          │
-│   │  Gas Cost: $17.00                                           │          │
-│   │  Exchange Fees: $34,000 * 0.4% = $136.00                    │          │
-│   │    - Uniswap: 0.3%                                          │          │
-│   │    - Binance: 0.1%                                          │          │
-│   │  Total Costs: $17 + $136 = $153.00                          │          │
-│   │  Net Profit: $55 - $153 = -$98.00 (NOT PROFITABLE)          │          │
-│   └─────────────────────────────────────────────────────────────┘          │
+│   ┌─────────────────────────────────────────────────────────────┐           │
+│   │  profit = calculator.Calculate(spread, tradeSize, gasCost)  │           │
+│   │                                                             │           │
+│   │  Trade Value: 10 ETH * $3,400 = $34,000                     │           │
+│   │  Gross Profit: |spread| * size = $55.00                     │           │
+│   │  Gas Cost: $17.00                                           │           │
+│   │  Exchange Fees: $34,000 * 0.4% = $136.00                    │           │
+│   │    - Uniswap: 0.3%                                          │           │
+│   │    - Binance: 0.1%                                          │           │
+│   │  Total Costs: $17 + $136 = $153.00                          │           │
+│   │  Net Profit: $55 - $153 = -$98.00 (NOT PROFITABLE)          │           │
+│   └─────────────────────────────────────────────────────────────┘           │
 │       │                                                                     │
-│       │ 5. Build Opportunity                                               │
+│       │ 5. Build Opportunity                                                │
 │       ▼                                                                     │
-│   ┌─────────────────────────────────────────────────────────────┐          │
-│   │  opportunity = &Opportunity{                                 │          │
-│   │    ID:            "21000000-ETHUSDC-10",                     │          │
-│   │    BlockNumber:   21000000,                                  │          │
-│   │    Direction:     DEX_TO_CEX,                                │          │
-│   │    TradeSize:     10,                                        │          │
-│   │    CEXPrice:      3400.50,                                   │          │
-│   │    DEXPrice:      3395.00,                                   │          │
-│   │    Spread:        {...},                                     │          │
-│   │    Profit:        {IsProfitable: false, ...},                │          │
-│   │    DEXQuote:      {FeeTier: 3000, ...},  // 0.30% pool      │          │
-│   │    RequiredCapital: 34000.00,  // USDC needed               │          │
-│   │    ExecutionSteps: [                                         │          │
-│   │      {1, "Buy 10 ETH on Binance at $3,400.50"},             │          │
-│   │      {2, "Transfer ETH to trading wallet"},                  │          │
-│   │      {3, "Execute Uniswap V3 swap via 0.30% pool"},         │          │
-│   │      {4, "Receive USDC from swap"},                          │          │
-│   │    ],                                                        │          │
-│   │    RiskFactors: [                                            │          │
-│   │      {Name: "Slippage", Severity: "low"},                   │          │
-│   │      {Name: "MEV", Severity: "medium"},                      │          │
-│   │      {Name: "Timing", Severity: "low"},                      │          │
-│   │    ],                                                        │          │
-│   │  }                                                           │          │
-│   └─────────────────────────────────────────────────────────────┘          │
+│   ┌─────────────────────────────────────────────────────────────┐           │
+│   │  opportunity = &Opportunity{                                │           │
+│   │    ID:            "21000000-ETHUSDC-10",                    │           │
+│   │    BlockNumber:   21000000,                                 │           │
+│   │    Direction:     DEX_TO_CEX,                               │           │
+│   │    TradeSize:     10,                                       │           │
+│   │    CEXPrice:      3400.50,                                  │           │
+│   │    DEXPrice:      3395.00,                                  │           │
+│   │    Spread:        {...},                                    │           │
+│   │    Profit:        {IsProfitable: false, ...},               │           │
+│   │    DEXQuote:      {FeeTier: 3000, ...},  // 0.30% pool      │           │
+│   │    RequiredCapital: 34000.00,  // USDC needed               │           │
+│   │    ExecutionSteps: [                                        │           │
+│   │      {1, "Buy 10 ETH on Binance at $3,400.50"},             │           │
+│   │      {2, "Transfer ETH to trading wallet"},                 │           │
+│   │      {3, "Execute Uniswap V3 swap via 0.30% pool"},         │           │
+│   │      {4, "Receive USDC from swap"},                         │           │
+│   │    ],                                                       │           │
+│   │    RiskFactors: [                                           │           │
+│   │      {Name: "Slippage", Severity: "low"},                   │           │
+│   │      {Name: "MEV", Severity: "medium"},                     │           │
+│   │      {Name: "Timing", Severity: "low"},                     │           │
+│   │    ],                                                       │           │
+│   │  }                                                          │           │
+│   └─────────────────────────────────────────────────────────────┘           │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
